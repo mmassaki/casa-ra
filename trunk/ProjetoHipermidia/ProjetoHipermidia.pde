@@ -15,8 +15,9 @@ import saito.objloader.*;
 Capture cam;
 NyARMultiBoard nya;
 OBJModel model;
+OBJModel model2;
 PFont font;
-int radius = 40;
+int variacao = 0;
 float angulo1, angulo2 = 0;
 
 String angle2text(float a)
@@ -31,15 +32,12 @@ String trans2text(float i)
 }
 
 void setup() {
-  try {
-    quicktime.QTSession.open();
-  } catch (quicktime.QTException qte) {
-    qte.printStackTrace();
-  }
-  size(800,600,OPENGL);
+  size(640,480,OPENGL);
   // making an object called "model" that is a new instance of OBJModel
-  model = new OBJModel(this, "male-01-suit.obj", "relative", QUADS);
-  model.scale(12);
+  model = new OBJModel(this, "VW-new-beetle.obj", "relative", QUADS);
+  model.scale(8);
+  model2 = new OBJModel(this, "VW-new-beetle.obj", "relative", QUADS);
+  model2.scale(8);
   colorMode(RGB, 100);
   font=createFont("FFScala", 32);
   // I'm using the GSVideo capture stack
@@ -75,6 +73,8 @@ void drawMarkerPos(int[][] pos2d)
 }
 
 void draw() {
+  lights();
+  directionalLight(51, 102, 126, -1, 0, 0);
   if (cam.available() !=true) {
     return;
   }
@@ -83,12 +83,11 @@ void draw() {
   cam.read();
   hint(DISABLE_DEPTH_TEST);
   image(cam,0,0);
+  background(cam);
   hint(ENABLE_DEPTH_TEST);
 
   if (nya.detect(cam))
   {
-    lights();
-    directionalLight(51, 102, 126, -1, 0, 0);
         
     hint(DISABLE_DEPTH_TEST);
     for (int i=0; i < nya.markers.length; i++)
@@ -123,8 +122,8 @@ void draw() {
          // if it's the hiro marker, draw a cube
          if (i == 0)
          {
-           rotateX(degrees(90));
-           translate(0,-60,0);
+           rotateX(radians(-90));
+           //translate(0,-60,0);
            noStroke();
            model.draw();
            //stroke(255,200,0);
@@ -133,7 +132,7 @@ void draw() {
        // else draw a sphere
        else
          {
-         stroke(0,200,255);
+         //stroke(0,200,255);
          if (nya.markers[0].detected)
          {
            angulo2 = nya.markers[0].angle.z;
@@ -142,10 +141,17 @@ void draw() {
            {
              angulo1 *= -1;
            }
-           radius = radius + (int)(10 * (angulo2 - angulo1));
+           variacao = (int)(10*(angulo2 - angulo1));
            angulo1 = angulo2;
          }
-         sphere(radius);
+         rotateX(radians(-90));
+         noStroke();
+         if(variacao > 0)
+           model2.scale(1.05);
+         else if (variacao < 0)
+           model2.scale(0.95);
+         model2.draw();
+         variacao = 0;
        }
        nya.markers[i].endTransform();
       }
@@ -159,4 +165,5 @@ void draw() {
   
 
 }
+
 
