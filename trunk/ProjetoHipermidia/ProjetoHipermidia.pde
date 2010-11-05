@@ -32,6 +32,13 @@ String trans2text(float i)
 }
 
 void setup() {
+  // trecho para funcionamento no OSX
+  try {
+    quicktime.QTSession.open();
+  } catch (quicktime.QTException qte) {
+    qte.printStackTrace();
+  }
+  
   size(640,480,OPENGL);
   // making an object called "model" that is a new instance of OBJModel
   model = new OBJModel(this, "VW-new-beetle.obj", "relative", QUADS);
