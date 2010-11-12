@@ -1,82 +1,43 @@
-/**	NyARToolkit for proce55ing/0.3.0
-	(c)2008-2010 nyatla
-	airmail(at)ebony.plala.or.jp
-
-  example modified to demonstrate NyARMultiBoard + NyARMultiBoardMarker by
-  Charl P. Botha <http://cpbotha.net/>
-*/
+/*************************************************/
+/* PCS2057 - Multimídia e Hipermídia             */
+/* Projeto: Arquitetura com realidade aumentada  */
+/* Autores: Bruno Nigro                          */
+/*          Fernando Nobre                       */
+/*          Marco Massaki Horoiwa                */
+/*************************************************/
  
 import processing.video.*;
 import jp.nyatla.nyar4psg.*;
 import processing.opengl.*;
 import javax.media.opengl.*;
-import saito.objloader.*;
 import objimp.*;
 
 Capture cam;
 NyARMultiBoard nya;
 ObjImpScene scene;
-//OBJModel model;
-OBJModel model2;
 PFont font;
-int variacao = 0;
-float angulo1, angulo2 = 0;
 
+// Formata um ângulo
 String angle2text(float a)
 {
   int i=(int)degrees(a);
   i=(i>0?i:i+360);
   return (i<100?"  ":i<10?" ":"")+Integer.toString(i);
 }
+
+// Formata um número
 String trans2text(float i)
 {
   return (i<100?"  ":i<10?" ":"")+Integer.toString((int)i);
 }
 
-void setup() {
-  // trecho para funcionamento no OSX
-  try {
-    quicktime.QTSession.open();
-  } catch (quicktime.QTException qte) {
-    qte.printStackTrace();
-  }
-  
-  size(640,480,OPENGL);
-   hint( ENABLE_OPENGL_4X_SMOOTH );
-  smooth();
-
-  frameRate( 60 );
-  // making an object called "model" that is a new instance of OBJModel
-  //model = new OBJModel(this, "VW-new-beetle.obj", "relative", QUADS);
-  //model.scale(8);
-  scene = new ObjImpScene( this );
-  scene.load( dataPath("house_obj.obj"), 5 );
-  //model2 = new OBJModel(this, "VW-new-beetle.obj", "relative", QUADS);
-  //model2.scale(8);
-  //colorMode(RGB, 100);
-  font=createFont("FFScala", 32);
-  // I'm using the GSVideo capture stack
-  cam=new Capture(this,width,height);
-  // array of pattern file names, these have to be in NyARMultiTest/data
-  String[] patts = {"patt.hiro", "patt.kanji"};
-  // array of corresponding widths in mm
-  double[] widths = {80,80};
-  // initialise the NyARMultiBoard
-  nya=new NyARMultiBoard(this,width,height,"camera_para.dat",patts,widths);
-  print(nya.VERSION);
-
-  nya.gsThreshold=120;//(0<n<255) default=110
-  nya.cfThreshold=0.4;//(0.0<n<1.0) default=0.4
-
-}
-
+// Desenha as coordenadas dos marcadores
 void drawMarkerPos(int[][] pos2d)
 {
   textFont(font,10.0);
   stroke(100,0,0);
   fill(100,0,0);
   
-  // draw ellipses at outside corners of marker
   for(int i=0;i<4;i++){
     ellipse(pos2d[i][0], pos2d[i][1],5,5);
   }
@@ -87,7 +48,7 @@ void drawMarkerPos(int[][] pos2d)
   }
 }
 
-// val is 0 or 1. 0 = directional light, 1 = point light
+// Configura a luz do ambiente
 void setupLight( GL g, float[] pos, float val )
 {
   float[] light_emissive = { 0.0f, 0.0f, 0.0f, 1 };
@@ -106,22 +67,53 @@ void setupLight( GL g, float[] pos, float val )
   g.glEnable( GL.GL_COLOR_MATERIAL );
 }  
 
+void setup() {
+  // trecho para funcionamento no OSX
+  try 
+  {
+    quicktime.QTSession.open();
+  } 
+  catch (quicktime.QTException qte) 
+  {
+    qte.printStackTrace();
+  }
+  
+  size(640,480,OPENGL);
+  hint( ENABLE_OPENGL_4X_SMOOTH );
+  smooth();
+  frameRate(60);
+  font=createFont("FFScala", 32);
+  cam=new Capture(this,width,height);
+  
+  // Modelos 
+  scene = new ObjImpScene( this );
+  scene.load( dataPath("house_obj.obj"), 5 );
+  
+  //Marcadores
+  String[] patts = {"patt.hiro", "patt.kanji"};
+  double[] widths = {80,80};
+  
+  // inicializa o NyARMultiBoard
+  nya=new NyARMultiBoard(this,width,height,"camera_para.dat",patts,widths);
+  print(nya.VERSION);
+  nya.gsThreshold=120;//(0<n<255) default=110
+  nya.cfThreshold=0.4;//(0.0<n<1.0) default=0.4
+
+}
+
 void draw() {
-  //lights();
-  //directionalLight(51, 102, 126, -1, 0, 0);
   
-  GL _gl = ((PGraphicsOpenGL)g).beginGL();
+  PGraphicsOpenGL pgl = (PGraphicsOpenGL) g;
+  
+  GL _gl = pgl.beginGL();
+  // Configura a iluminção 
   setupLight( _gl, new float[]{0, 15, 0}, 1 );
-  ((PGraphicsOpenGL)g).endGL();
+  pgl.endGL();
   
-  //scale( 0.2, -0.2, 0.2 );
-  //translate( 0, -3000, -3000 );
-  //scene.draw();
   if (cam.available() !=true) {
     return;
   }
 
-  background(255);
   cam.read();
   hint(DISABLE_DEPTH_TEST);
   image(cam,0,0);
@@ -132,6 +124,8 @@ void draw() {
   {
         
     hint(DISABLE_DEPTH_TEST);
+    
+    // Desenha a posição dos marcadores
     for (int i=0; i < nya.markers.length; i++)
     {
       if (nya.markers[i].detected)
@@ -152,7 +146,7 @@ void draw() {
     
     hint(ENABLE_DEPTH_TEST);
     
-    PGraphicsOpenGL pgl = (PGraphicsOpenGL) g;
+    // Desenha os modelos nos marcadores
     for (int i=0; i < nya.markers.length; i++)
     {
       if (nya.markers[i].detected)
@@ -161,20 +155,16 @@ void draw() {
   
          translate(0,0,20);
   
-         // if it's the hiro marker, draw a cube
+         // Se for o marcador de casa, desenha a casa
          if (i == 0)
          {
            rotateX(radians(-90));
-           //translate(0,-60,0);
            noStroke();
            scale( 0.015, -0.015, 0.015 );
            scene.draw();
-           //model.draw();
-           //stroke(255,200,0);
-           //box(40);
          }
-       // else draw a sphere
-       else
+         
+       /*else
          {
          //stroke(0,200,255);
          if (nya.markers[0].detected)
@@ -196,7 +186,7 @@ void draw() {
            model2.scale(0.95);
          model2.draw();
          variacao = 0;
-       }
+       }*/
        nya.markers[i].endTransform();
       }
     }
