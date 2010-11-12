@@ -11,10 +11,12 @@ import jp.nyatla.nyar4psg.*;
 import processing.opengl.*;
 import javax.media.opengl.*;
 import saito.objloader.*;
+import objimp.*;
 
 Capture cam;
 NyARMultiBoard nya;
-OBJModel model;
+ObjImpScene scene;
+//OBJModel model;
 OBJModel model2;
 PFont font;
 int variacao = 0;
@@ -40,12 +42,18 @@ void setup() {
   }
   
   size(640,480,OPENGL);
+   hint( ENABLE_OPENGL_4X_SMOOTH );
+  smooth();
+
+  frameRate( 60 );
   // making an object called "model" that is a new instance of OBJModel
-  model = new OBJModel(this, "VW-new-beetle.obj", "relative", QUADS);
-  model.scale(8);
-  model2 = new OBJModel(this, "VW-new-beetle.obj", "relative", QUADS);
-  model2.scale(8);
-  colorMode(RGB, 100);
+  //model = new OBJModel(this, "VW-new-beetle.obj", "relative", QUADS);
+  //model.scale(8);
+  scene = new ObjImpScene( this );
+  scene.load( dataPath("house_obj.obj"), 5 );
+  //model2 = new OBJModel(this, "VW-new-beetle.obj", "relative", QUADS);
+  //model2.scale(8);
+  //colorMode(RGB, 100);
   font=createFont("FFScala", 32);
   // I'm using the GSVideo capture stack
   cam=new Capture(this,width,height);
@@ -79,9 +87,36 @@ void drawMarkerPos(int[][] pos2d)
   }
 }
 
+// val is 0 or 1. 0 = directional light, 1 = point light
+void setupLight( GL g, float[] pos, float val )
+{
+  float[] light_emissive = { 0.0f, 0.0f, 0.0f, 1 };
+  float[] light_ambient = { 7f, 7f, 7f, 1 };
+  float[] light_diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
+  float[] light_specular = { 1.0f, 1.0f, 1.0f, 1.0f };  
+  float[] light_position = { pos[0], pos[1], pos[2], val };  
+
+  g.glLightfv ( GL.GL_LIGHT1, GL.GL_AMBIENT, light_ambient, 0 );
+  g.glLightfv ( GL.GL_LIGHT1, GL.GL_DIFFUSE, light_diffuse, 0 );
+  g.glLightfv ( GL.GL_LIGHT1, GL.GL_SPECULAR, light_specular, 0 );
+  g.glLightfv ( GL.GL_LIGHT1, GL.GL_POSITION, light_position, 0 );  
+  g.glEnable( GL.GL_LIGHT1 );
+  g.glEnable( GL.GL_LIGHTING );
+  
+  g.glEnable( GL.GL_COLOR_MATERIAL );
+}  
+
 void draw() {
-  lights();
-  directionalLight(51, 102, 126, -1, 0, 0);
+  //lights();
+  //directionalLight(51, 102, 126, -1, 0, 0);
+  
+  GL _gl = ((PGraphicsOpenGL)g).beginGL();
+  setupLight( _gl, new float[]{0, 15, 0}, 1 );
+  ((PGraphicsOpenGL)g).endGL();
+  
+  //scale( 0.2, -0.2, 0.2 );
+  //translate( 0, -3000, -3000 );
+  //scene.draw();
   if (cam.available() !=true) {
     return;
   }
@@ -132,7 +167,9 @@ void draw() {
            rotateX(radians(-90));
            //translate(0,-60,0);
            noStroke();
-           model.draw();
+           scale( 0.015, -0.015, 0.015 );
+           scene.draw();
+           //model.draw();
            //stroke(255,200,0);
            //box(40);
          }
@@ -166,11 +203,5 @@ void draw() {
     
     
   }
-  
-  
-  
-  
-
 }
-
 
