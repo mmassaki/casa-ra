@@ -10,11 +10,11 @@ import processing.video.*;
 import jp.nyatla.nyar4psg.*;
 import processing.opengl.*;
 import javax.media.opengl.*;
-import objimp.*;
+import mri.*;
 
 Capture cam;
 NyARMultiBoard nya;
-ObjImpScene scene;
+V3dsScene scene;
 PFont font;
 
 // Formata um ângulo
@@ -86,8 +86,7 @@ void setup() {
   cam=new Capture(this,width,height);
   
   // Modelos 
-  scene = new ObjImpScene( this );
-  scene.load( dataPath("house_obj.obj"), 5 );
+  scene = new V3dsScene(this, "house_open.3ds" );
   
   //Marcadores
   String[] patts = {"patt.hiro", "patt.kanji"};
@@ -105,7 +104,7 @@ void draw() {
   
   PGraphicsOpenGL pgl = (PGraphicsOpenGL) g;
   
-  GL _gl = pgl.beginGL();
+  GL _gl = pgl.beginGL(); 
   // Configura a iluminção 
   setupLight( _gl, new float[]{0, 15, 0}, 1 );
   pgl.endGL();
@@ -160,7 +159,7 @@ void draw() {
          {
            rotateX(radians(-90));
            noStroke();
-           scale( 0.015, -0.015, 0.015 );
+           scale( 0.15, -0.15, 0.15 );
            scene.draw();
          }
          
