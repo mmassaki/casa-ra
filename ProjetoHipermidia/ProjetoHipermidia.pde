@@ -14,8 +14,14 @@ import mri.*;
 
 Capture cam;
 NyARMultiBoard nya;
-V3dsScene scene;
+V3dsScene casa, telhado;
 PFont font;
+boolean inicio = true;
+float angulo1, angulo2, variacao;
+float anguloCasa;
+float posicaoTelhado;
+float xLuz, yLuz;
+
 
 // Formata um ângulo
 String angle2text(float a)
@@ -51,10 +57,10 @@ void drawMarkerPos(int[][] pos2d)
 // Configura a luz do ambiente
 void setupLight( GL g, float[] pos, float val )
 {
-  float[] light_emissive = { 0.0f, 0.0f, 0.0f, 1 };
-  float[] light_ambient = { 7f, 7f, 7f, 1 };
+  float[] light_emissive = { 1.0f, 1.0f, 1.0f, 1 };
+  float[] light_ambient = { 1f, 1f, 1f, 1 };
   float[] light_diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
-  float[] light_specular = { 1.0f, 1.0f, 1.0f, 1.0f };  
+  float[] light_specular = { 0.0f, 0.0f, 0.0f, 0.0f };  
   float[] light_position = { pos[0], pos[1], pos[2], val };  
 
   g.glLightfv ( GL.GL_LIGHT1, GL.GL_AMBIENT, light_ambient, 0 );
@@ -86,7 +92,8 @@ void setup() {
   cam=new Capture(this,width,height);
   
   // Modelos 
-  scene = new V3dsScene(this, "house_open.3ds" );
+  casa = new V3dsScene(this, "house_open.3ds" );
+  telhado = new V3dsScene(this, "house_roof.3ds");
   
   //Marcadores
   String[] patts = {"patt.hiro", "patt.kanji"};
@@ -98,16 +105,14 @@ void setup() {
   nya.gsThreshold=120;//(0<n<255) default=110
   nya.cfThreshold=0.4;//(0.0<n<1.0) default=0.4
 
+  xLuz = 1000;
+  yLuz = 0;
 }
 
 void draw() {
   
   PGraphicsOpenGL pgl = (PGraphicsOpenGL) g;
   
-  GL _gl = pgl.beginGL(); 
-  // Configura a iluminção 
-  setupLight( _gl, new float[]{0, 15, 0}, 1 );
-  pgl.endGL();
   
   if (cam.available() !=true) {
     return;
@@ -152,16 +157,65 @@ void draw() {
       {  
          nya.markers[i].beginTransform(pgl);
   
-         translate(0,0,20);
-  
          // Se for o marcador de casa, desenha a casa
-         if (i == 0)
+         switch (i)
          {
-           rotateX(radians(-90));
-           noStroke();
-           scale( 0.15, -0.15, 0.15 );
-           scene.draw();
+           case 0:
+             rotateX(radians(-90));
+             GL _gl = pgl.beginGL(); 
+             // Configura a iluminção 
+             setupLight( _gl, new float[]{xLuz, yLuz, 0}, 1 );
+             pgl.endGL();
+             translate(-30,0,20);
+             //Rotaciona a casa
+             rotateY(anguloCasa);
+             noStroke();
+             scale( 0.1, -0.1, 0.1 );
+             casa.draw();
+             translate(0, 1000*posicaoTelhado, 0);
+             telhado.draw();
+             break;
+           case 1:
+             if (inicio)
+               angulo1 =  nya.markers[1].angle.z;
+             else angulo1 = angulo2;
+             angulo2 = nya.markers[1].angle.z;
+             if ((angulo1 >= 0 && angulo2 < 0) || (angulo1 < 0 && angulo2 >= 0))
+             {
+               angulo1 *= -1;
+             }
+             variacao = angulo2 - angulo1;
+             xLuz = xLuz + 500*variacao;
+             if (xLuz > 1000)
+               xLuz = 1000;
+             else if (xLuz < -1000)
+               xLuz = -1000;
+             yLuz = sqrt(1000000 - xLuz*xLuz);
+             inicio = false;
+             println(xLuz + ", " + yLuz);
+             break;
+           case 2:
+             inicio = true;
+             anguloCasa = anguloCasa + variacao;
+             break;
+           case 3:
+             inicio = true;
+             posicaoTelhado = posicaoTelhado + variacao;
+             if(posicaoTelhado < 0)
+               posicaoTelhado = 0;
+             break;
+           case 4:
+             inicio = true;
+             xLuz = xLuz + variacao;
+             if (xLuz > 1000)
+               xLuz = 1000;
+             else if (xLuz < -1000)
+               xLuz = -1000;
+             yLuz = sqrt(1000000 - xLuz*xLuz);
+             break;
          }
+         
+         
          
        /*else
          {
