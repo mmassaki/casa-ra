@@ -3,7 +3,7 @@
 /* Projeto: Arquitetura com realidade aumentada  */
 /* Autores: Bruno Nigro                          */
 /*          Fernando Nobre                       */
-/*          Marco Massaki Horoiwa                */
+/*          Marcio Massaki Horoiwa                */
 /*************************************************/
  
 import processing.video.*;
