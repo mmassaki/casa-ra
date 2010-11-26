@@ -3,7 +3,7 @@
 /* Projeto: Arquitetura com realidade aumentada  */
 /* Autores: Bruno Nigro                          */
 /*          Fernando Nobre                       */
-/*          Marcio Massaki Horoiwa                */
+/*          Marco Massaki Horoiwa                */
 /*************************************************/
  
 import processing.video.*;
@@ -16,11 +16,13 @@ Capture cam;
 NyARMultiBoard nya;
 V3dsScene casa, telhado;
 PFont font;
-boolean inicio = true;
+boolean inicio = false;
+int comandoAnterior, comandoAtual;
 float angulo1, angulo2, variacao;
 float anguloCasa;
 float posicaoTelhado;
 float xLuz, yLuz;
+float escala = 0.1;
 
 
 // Formata um ângulo
@@ -69,7 +71,7 @@ void setupLight( GL g, float[] pos, float val )
   g.glLightfv ( GL.GL_LIGHT1, GL.GL_POSITION, light_position, 0 );  
   g.glEnable( GL.GL_LIGHT1 );
   g.glEnable( GL.GL_LIGHTING );
-  
+    
   g.glEnable( GL.GL_COLOR_MATERIAL );
 }  
 
@@ -96,8 +98,8 @@ void setup() {
   telhado = new V3dsScene(this, "house_roof.3ds");
   
   //Marcadores
-  String[] patts = {"patt.hiro", "patt.kanji"};
-  double[] widths = {80,80};
+  String[] patts = {"casa.pat", "controle.pat", "rotacao.pat", "telhado.pat", "sol.pat", "zoom.pat"};
+  double[] widths = {80,80,80,80,80,80};
   
   // inicializa o NyARMultiBoard
   nya=new NyARMultiBoard(this,width,height,"camera_para.dat",patts,widths);
@@ -122,12 +124,11 @@ void draw() {
   hint(DISABLE_DEPTH_TEST);
   image(cam,0,0);
   background(cam);
-  hint(ENABLE_DEPTH_TEST);
 
   if (nya.detect(cam))
   {
-        
-    hint(DISABLE_DEPTH_TEST);
+    
+    text((int)(nya.markers[0].confidence*100)+"%",width-60,height-20);
     
     // Desenha a posição dos marcadores
     for (int i=0; i < nya.markers.length; i++)
@@ -136,13 +137,13 @@ void draw() {
       {
         textFont(font,25.0);
         fill((int)((1.0-nya.markers[i].confidence)*100),(int)(nya.markers[i].confidence*100),0);
-        text((int)(nya.markers[i].confidence*100)+"%",width-60,height-20);
+        //text((int)(nya.markers[i].confidence*100)+"%",width-60,height-20);
         pushMatrix();
         textFont(font,10.0);
-        fill(0,100,0,80);
+        fill(0,100,0,255);
         translate((nya.markers[i].pos2d[0][0]+nya.markers[i].pos2d[1][0]+nya.markers[i].pos2d[2][0]+nya.markers[i].pos2d[3][0])/4+50,(nya.markers[i].pos2d[0][1]+nya.markers[i].pos2d[1][1]+nya.markers[i].pos2d[2][1]+nya.markers[i].pos2d[3][1])/4+50);
         text("TRANS "+trans2text(nya.markers[i].trans.x)+","+trans2text(nya.markers[i].trans.y)+","+trans2text(nya.markers[i].trans.z),0,0);
-        text("ANGLE "+angle2text(nya.markers[i].angle.x)+","+angle2text(nya.markers[i].angle.y)+","+angle2text(nya.markers[i].angle.z),0,15);
+        text("ANGLE "+angle2text(nya.markers[i].angle.x)+","+angle2text(nya.markers[i].angle.y)+","+angle2text(nya.markers[i].angle.z),100,15);
         popMatrix();  
         drawMarkerPos(nya.markers[i].pos2d);
       }
@@ -150,17 +151,25 @@ void draw() {
     
     hint(ENABLE_DEPTH_TEST);
     
-    // Desenha os modelos nos marcadores
-    for (int i=0; i < nya.markers.length; i++)
-    {
-      if (nya.markers[i].detected)
-      {  
-         nya.markers[i].beginTransform(pgl);
+    comandoAnterior = comandoAtual;
+    
+    if(nya.markers[2].detected)
+      comandoAtual = 2;
+    else if(nya.markers[3].detected)
+      comandoAtual = 3;
+    else if(nya.markers[4].detected)
+      comandoAtual = 4;
+    else if(nya.markers[5].detected)
+      comandoAtual = 5;
+      
+    if (comandoAnterior != comandoAtual)
+      inicio = true;
+    else inicio = false;
+    // Se for o marcador de casa, desenha a casa
+      if (nya.markers[0].detected)
+      {
+         nya.markers[0].beginTransform(pgl);
   
-         // Se for o marcador de casa, desenha a casa
-         switch (i)
-         {
-           case 0:
              rotateX(radians(-90));
              GL _gl = pgl.beginGL(); 
              // Configura a iluminção 
@@ -170,12 +179,19 @@ void draw() {
              //Rotaciona a casa
              rotateY(anguloCasa);
              noStroke();
-             scale( 0.1, -0.1, 0.1 );
+             scale(escala, -escala, escala);
+             
              casa.draw();
              translate(0, 1000*posicaoTelhado, 0);
              telhado.draw();
-             break;
-           case 1:
+             
+             nya.markers[0].endTransform();
+      }
+      
+      if (nya.markers[1].detected)
+      {
+        nya.markers[1].beginTransform(pgl);
+        
              if (inicio)
                angulo1 =  nya.markers[1].angle.z;
              else angulo1 = angulo2;
@@ -185,66 +201,38 @@ void draw() {
                angulo1 *= -1;
              }
              variacao = angulo2 - angulo1;
-             xLuz = xLuz + 500*variacao;
-             if (xLuz > 1000)
-               xLuz = 1000;
-             else if (xLuz < -1000)
-               xLuz = -1000;
-             yLuz = sqrt(1000000 - xLuz*xLuz);
-             inicio = false;
-             println(xLuz + ", " + yLuz);
-             break;
+             
+        nya.markers[1].endTransform();   
+      }
+      
+      nya.markers[comandoAtual].beginTransform(pgl);
+      switch (comandoAtual)
+      {
            case 2:
-             inicio = true;
              anguloCasa = anguloCasa + variacao;
              break;
            case 3:
-             inicio = true;
              posicaoTelhado = posicaoTelhado + variacao;
              if(posicaoTelhado < 0)
                posicaoTelhado = 0;
              break;
            case 4:
-             inicio = true;
-             xLuz = xLuz + variacao;
+             xLuz = xLuz + 250 * variacao;
              if (xLuz > 1000)
                xLuz = 1000;
              else if (xLuz < -1000)
                xLuz = -1000;
              yLuz = sqrt(1000000 - xLuz*xLuz);
              break;
-         }
-         
-         
-         
-       /*else
-         {
-         //stroke(0,200,255);
-         if (nya.markers[0].detected)
-         {
-           angulo2 = nya.markers[0].angle.z;
-           stroke(0, 102, 0);
-           if ((angulo1 >= 0 && angulo2 < 0) || (angulo1 < 0 && angulo2 >= 0))
-           {
-             angulo1 *= -1;
-           }
-           variacao = (int)(10*(angulo2 - angulo1));
-           angulo1 = angulo2;
-         }
-         rotateX(radians(-90));
-         noStroke();
-         if(variacao > 0)
-           model2.scale(1.05);
-         else if (variacao < 0)
-           model2.scale(0.95);
-         model2.draw();
-         variacao = 0;
-       }*/
-       nya.markers[i].endTransform();
-      }
-    }
-    
-    
+           case 5:
+             escala = escala + 0.1 * variacao;
+             if (escala < 0.1)
+               escala = 0.1;
+             break;
+       }
+       
+       nya.markers[comandoAtual].endTransform();
   }
+    
 }
 
