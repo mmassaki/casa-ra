@@ -12,7 +12,15 @@ import processing.opengl.*;
 import javax.media.opengl.*;
 import mri.*;
 
-static boolean DEBUG_MODE = true;
+// Ativa o modo debug
+private static boolean DEBUG_MODE = true;
+
+private static final int CASA = 0;
+private static final int SETA = 1;
+private static final int ROTACAO = 2;
+private static final int SOL = 3;
+private static final int TELHADO = 4;
+private static final int ZOOM = 5;
 
 Capture cam;
 NyARMultiBoard nya;
@@ -96,7 +104,7 @@ void setup() {
     qte.printStackTrace();
   }
   
-  size(640,480,OPENGL);
+  size(640, 480, OPENGL);
   hint( ENABLE_OPENGL_4X_SMOOTH );
   smooth();
   frameRate(60);
@@ -108,7 +116,7 @@ void setup() {
   telhado = new V3dsScene(this, "house_roof.3ds");
   
   //Marcadores
-  String[] patts = {"casa.pat", "controle.pat", "rotacao.pat", "telhado.pat", "sol.pat", "zoom.pat"};
+  String[] patts = {"casa.pat", "seta.pat", "rotacao.pat", "sol.pat", "telhado.pat", "zoom.pat"};
   double[] widths = {80, 80, 80, 80, 80, 80};
   
   // inicializa o NyARMultiBoard
@@ -138,7 +146,7 @@ void draw() {
   if (nya.detect(cam))
   {
     if (DEBUG_MODE) {
-      text((int)(nya.markers[0].confidence*100)+"%",width-60,height-20);
+      text((int)(nya.markers[CASA].confidence*100)+"%",width-60,height-20);
       
       // Desenha a posição dos marcadores
       for (int i=0; i < nya.markers.length; i++)
@@ -147,7 +155,6 @@ void draw() {
         {
           textFont(font,25.0);
           fill((int)((1.0-nya.markers[i].confidence)*100),(int)(nya.markers[i].confidence*100),0);
-          //text((int)(nya.markers[i].confidence*100)+"%",width-60,height-20);
           pushMatrix();
           textFont(font,10.0);
           fill(0,100,0,255);
@@ -164,22 +171,20 @@ void draw() {
     
     comandoAnterior = comandoAtual;
     
-    if(nya.markers[2].detected)
-      comandoAtual = 2;
-    else if(nya.markers[3].detected)
-      comandoAtual = 3;
-    else if(nya.markers[4].detected)
-      comandoAtual = 4;
-    else if(nya.markers[5].detected)
-      comandoAtual = 5;
+    boolean comando_ok = false;
+    for (int i = 2; i <= 5 && !comando_ok; i++) {
+      if (nya.markers[i].detected) {
+        comandoAtual = i;
+        comando_ok = true;
+      }
+    }
       
-    if (comandoAnterior != comandoAtual)
-      inicio = true;
-    else inicio = false;
+    inicio = comandoAnterior != comandoAtual;
+    
     // Se for o marcador de casa, desenha a casa
-      if (nya.markers[0].detected)
+      if (nya.markers[CASA].detected)
       {
-         nya.markers[0].beginTransform(pgl);
+         nya.markers[CASA].beginTransform(pgl);
          
          rotateX(radians(-90));
          GL _gl = pgl.beginGL(); 
@@ -196,57 +201,59 @@ void draw() {
          translate(0, 1000*posicaoTelhado, 0);
          telhado.draw();
          
-         nya.markers[0].endTransform();
+         nya.markers[CASA].endTransform();
       }
       
-      if (nya.markers[1].detected)
+      if (nya.markers[SETA].detected)
       {
-        nya.markers[1].beginTransform(pgl);
+        nya.markers[SETA].beginTransform(pgl);
         
         drawMarkerRect(40, color(100, 0, 0)); // imprime um quadrado vermelho sobre a tag
         
         if (inicio)
-          angulo1 =  nya.markers[1].angle.z;
+          angulo1 =  nya.markers[SETA].angle.z;
         else angulo1 = angulo2;
-          angulo2 = nya.markers[1].angle.z;
+          angulo2 = nya.markers[SETA].angle.z;
         if ((angulo1 >= 0 && angulo2 < 0) || (angulo1 < 0 && angulo2 >= 0))
         {
           angulo1 *= -1;
         }
         variacao = angulo2 - angulo1;
              
-        nya.markers[1].endTransform();
+        nya.markers[SETA].endTransform();
       }
       
-      nya.markers[comandoAtual].beginTransform(pgl);
-      
-      drawMarkerRect(40, color(0, 100, 0)); // imprime um quadrado verde sobre a tag
-      switch (comandoAtual)
-      {
-         case 2:
-           anguloCasa = anguloCasa + variacao;
-           break;
-         case 3:
-           posicaoTelhado = posicaoTelhado + variacao;
-           if(posicaoTelhado < 0)
-             posicaoTelhado = 0;
-           break;
-         case 4:
-           xLuz = xLuz + 250 * variacao;
-           if (xLuz > 1000)
-             xLuz = 1000;
-           else if (xLuz < -1000)
-             xLuz = -1000;
-           yLuz = sqrt(1000000 - xLuz*xLuz);
-           break;
-         case 5:
-           escala = escala + 0.1 * variacao;
-           if (escala < 0.1)
-             escala = 0.1;
-           break;
-       }
-       
-       nya.markers[comandoAtual].endTransform();
+      if (comando_ok) {
+        nya.markers[comandoAtual].beginTransform(pgl);
+        drawMarkerRect(40, color(0, 100, 0)); // imprime um quadrado verde sobre a tag
+        nya.markers[comandoAtual].endTransform();
+        
+        switch (comandoAtual)
+        {
+          case ROTACAO:
+            
+            anguloCasa = anguloCasa + variacao;
+            break;
+          case SOL:
+            xLuz = xLuz + 250 * variacao;
+            if (xLuz > 1000)
+              xLuz = 1000;
+            else if (xLuz < -1000)
+              xLuz = -1000;
+            yLuz = sqrt(1000000 - xLuz*xLuz);
+            break;
+          case TELHADO:
+            posicaoTelhado = posicaoTelhado + variacao;
+            if(posicaoTelhado < 0)
+              posicaoTelhado = 0;
+            break;
+          case ZOOM:
+            escala = escala + 0.1 * variacao;
+            if (escala < 0.1)
+              escala = 0.1;
+            break;
+         }
+      }
   }
     
 }
