@@ -12,6 +12,8 @@ import processing.opengl.*;
 import javax.media.opengl.*;
 import mri.*;
 
+static boolean DEBUG_MODE = true;
+
 Capture cam;
 NyARMultiBoard nya;
 V3dsScene casa, telhado;
@@ -54,6 +56,14 @@ void drawMarkerPos(int[][] pos2d)
   for(int i=0;i<4;i++){
     text("("+pos2d[i][0]+","+pos2d[i][1]+")",pos2d[i][0],pos2d[i][1]);
   }
+}
+
+// Desenha um quadrado sobre o marcador
+void drawMarkerRect(int width, color rectColor)
+{  
+  noStroke();
+  fill(rectColor, 200);
+  rect(-width/2, -width/2, width, width);
 }
 
 // Configura a luz do ambiente
@@ -99,7 +109,7 @@ void setup() {
   
   //Marcadores
   String[] patts = {"casa.pat", "controle.pat", "rotacao.pat", "telhado.pat", "sol.pat", "zoom.pat"};
-  double[] widths = {80,80,80,80,80,80};
+  double[] widths = {80, 80, 80, 80, 80, 80};
   
   // inicializa o NyARMultiBoard
   nya=new NyARMultiBoard(this,width,height,"camera_para.dat",patts,widths);
@@ -127,25 +137,26 @@ void draw() {
 
   if (nya.detect(cam))
   {
-    
-    text((int)(nya.markers[0].confidence*100)+"%",width-60,height-20);
-    
-    // Desenha a posição dos marcadores
-    for (int i=0; i < nya.markers.length; i++)
-    {
-      if (nya.markers[i].detected)
+    if (DEBUG_MODE) {
+      text((int)(nya.markers[0].confidence*100)+"%",width-60,height-20);
+      
+      // Desenha a posição dos marcadores
+      for (int i=0; i < nya.markers.length; i++)
       {
-        textFont(font,25.0);
-        fill((int)((1.0-nya.markers[i].confidence)*100),(int)(nya.markers[i].confidence*100),0);
-        //text((int)(nya.markers[i].confidence*100)+"%",width-60,height-20);
-        pushMatrix();
-        textFont(font,10.0);
-        fill(0,100,0,255);
-        translate((nya.markers[i].pos2d[0][0]+nya.markers[i].pos2d[1][0]+nya.markers[i].pos2d[2][0]+nya.markers[i].pos2d[3][0])/4+50,(nya.markers[i].pos2d[0][1]+nya.markers[i].pos2d[1][1]+nya.markers[i].pos2d[2][1]+nya.markers[i].pos2d[3][1])/4+50);
-        text("TRANS "+trans2text(nya.markers[i].trans.x)+","+trans2text(nya.markers[i].trans.y)+","+trans2text(nya.markers[i].trans.z),0,0);
-        text("ANGLE "+angle2text(nya.markers[i].angle.x)+","+angle2text(nya.markers[i].angle.y)+","+angle2text(nya.markers[i].angle.z),100,15);
-        popMatrix();  
-        drawMarkerPos(nya.markers[i].pos2d);
+        if (nya.markers[i].detected)
+        {
+          textFont(font,25.0);
+          fill((int)((1.0-nya.markers[i].confidence)*100),(int)(nya.markers[i].confidence*100),0);
+          //text((int)(nya.markers[i].confidence*100)+"%",width-60,height-20);
+          pushMatrix();
+          textFont(font,10.0);
+          fill(0,100,0,255);
+          translate((nya.markers[i].pos2d[0][0]+nya.markers[i].pos2d[1][0]+nya.markers[i].pos2d[2][0]+nya.markers[i].pos2d[3][0])/4+50,(nya.markers[i].pos2d[0][1]+nya.markers[i].pos2d[1][1]+nya.markers[i].pos2d[2][1]+nya.markers[i].pos2d[3][1])/4+50);
+          text("TRANS "+trans2text(nya.markers[i].trans.x)+","+trans2text(nya.markers[i].trans.y)+","+trans2text(nya.markers[i].trans.z),100,0);
+          text("ANGLE "+angle2text(nya.markers[i].angle.x)+","+angle2text(nya.markers[i].angle.y)+","+angle2text(nya.markers[i].angle.z),100,15);
+          popMatrix();  
+          drawMarkerPos(nya.markers[i].pos2d);
+        }
       }
     }
     
@@ -169,66 +180,70 @@ void draw() {
       if (nya.markers[0].detected)
       {
          nya.markers[0].beginTransform(pgl);
-  
-             rotateX(radians(-90));
-             GL _gl = pgl.beginGL(); 
-             // Configura a iluminção 
-             setupLight( _gl, new float[]{xLuz, yLuz, 0}, 1 );
-             pgl.endGL();
-             translate(-30,0,20);
-             //Rotaciona a casa
-             rotateY(anguloCasa);
-             noStroke();
-             scale(escala, -escala, escala);
-             
-             casa.draw();
-             translate(0, 1000*posicaoTelhado, 0);
-             telhado.draw();
-             
-             nya.markers[0].endTransform();
+         
+         rotateX(radians(-90));
+         GL _gl = pgl.beginGL(); 
+         // Configura a iluminção 
+         setupLight( _gl, new float[]{xLuz, yLuz, 0}, 1 );
+         pgl.endGL();
+         translate(-30,0,20);
+         //Rotaciona a casa
+         rotateY(anguloCasa);
+         noStroke();
+         scale(escala, -escala, escala);
+         
+         casa.draw();
+         translate(0, 1000*posicaoTelhado, 0);
+         telhado.draw();
+         
+         nya.markers[0].endTransform();
       }
       
       if (nya.markers[1].detected)
       {
         nya.markers[1].beginTransform(pgl);
         
-             if (inicio)
-               angulo1 =  nya.markers[1].angle.z;
-             else angulo1 = angulo2;
-             angulo2 = nya.markers[1].angle.z;
-             if ((angulo1 >= 0 && angulo2 < 0) || (angulo1 < 0 && angulo2 >= 0))
-             {
-               angulo1 *= -1;
-             }
-             variacao = angulo2 - angulo1;
+        drawMarkerRect(40, color(100, 0, 0)); // imprime um quadrado vermelho sobre a tag
+        
+        if (inicio)
+          angulo1 =  nya.markers[1].angle.z;
+        else angulo1 = angulo2;
+          angulo2 = nya.markers[1].angle.z;
+        if ((angulo1 >= 0 && angulo2 < 0) || (angulo1 < 0 && angulo2 >= 0))
+        {
+          angulo1 *= -1;
+        }
+        variacao = angulo2 - angulo1;
              
-        nya.markers[1].endTransform();   
+        nya.markers[1].endTransform();
       }
       
       nya.markers[comandoAtual].beginTransform(pgl);
+      
+      drawMarkerRect(40, color(0, 100, 0)); // imprime um quadrado verde sobre a tag
       switch (comandoAtual)
       {
-           case 2:
-             anguloCasa = anguloCasa + variacao;
-             break;
-           case 3:
-             posicaoTelhado = posicaoTelhado + variacao;
-             if(posicaoTelhado < 0)
-               posicaoTelhado = 0;
-             break;
-           case 4:
-             xLuz = xLuz + 250 * variacao;
-             if (xLuz > 1000)
-               xLuz = 1000;
-             else if (xLuz < -1000)
-               xLuz = -1000;
-             yLuz = sqrt(1000000 - xLuz*xLuz);
-             break;
-           case 5:
-             escala = escala + 0.1 * variacao;
-             if (escala < 0.1)
-               escala = 0.1;
-             break;
+         case 2:
+           anguloCasa = anguloCasa + variacao;
+           break;
+         case 3:
+           posicaoTelhado = posicaoTelhado + variacao;
+           if(posicaoTelhado < 0)
+             posicaoTelhado = 0;
+           break;
+         case 4:
+           xLuz = xLuz + 250 * variacao;
+           if (xLuz > 1000)
+             xLuz = 1000;
+           else if (xLuz < -1000)
+             xLuz = -1000;
+           yLuz = sqrt(1000000 - xLuz*xLuz);
+           break;
+         case 5:
+           escala = escala + 0.1 * variacao;
+           if (escala < 0.1)
+             escala = 0.1;
+           break;
        }
        
        nya.markers[comandoAtual].endTransform();
