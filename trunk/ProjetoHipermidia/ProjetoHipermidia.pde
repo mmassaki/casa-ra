@@ -33,6 +33,7 @@ float anguloCasa;
 float posicaoTelhado;
 float xLuz, yLuz;
 float escala = 0.1;
+int posX, posZ;
 
 
 // Formata um ângulo
@@ -127,6 +128,9 @@ void setup() {
 
   xLuz = 1000;
   yLuz = 0;
+  
+  posX = -20;
+  posZ = 0;
 }
 
 void draw() {
@@ -191,7 +195,7 @@ void draw() {
          // Configura a iluminção 
          setupLight( _gl, new float[]{xLuz, yLuz, 0}, 1 );
          pgl.endGL();
-         translate(-30,0,20);
+         translate(posX, 0, posZ);
          //Rotaciona a casa
          rotateY(anguloCasa);
          noStroke();
@@ -231,7 +235,6 @@ void draw() {
         switch (comandoAtual)
         {
           case ROTACAO:
-            
             anguloCasa = anguloCasa + variacao;
             break;
           case SOL:
@@ -258,3 +261,21 @@ void draw() {
     
 }
 
+void keyPressed() {
+    // turns on and off the texture listed in .mtl file
+    if(key == 'w') {
+      posZ = posZ + 1;
+    }
+
+    else if(key == 's') {
+      posZ = posZ - 1;
+    }
+    
+    else if(key == 'd') {
+      posX = posX + 1;
+    }
+    
+    else if(key == 'a') {
+      posX = posX - 1;
+    }
+}
