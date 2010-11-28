@@ -262,7 +262,7 @@ void draw() {
 }
 
 void keyPressed() {
-    // turns on and off the texture listed in .mtl file
+  
     if(keyCode == UP) {
       posZ = posZ + 1;
     }
