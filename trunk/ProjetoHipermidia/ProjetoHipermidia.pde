@@ -263,19 +263,19 @@ void draw() {
 
 void keyPressed() {
     // turns on and off the texture listed in .mtl file
-    if(key == 'w') {
+    if(keyCode == UP) {
       posZ = posZ + 1;
     }
 
-    else if(key == 's') {
+    else if(keyCode == DOWN) {
       posZ = posZ - 1;
     }
     
-    else if(key == 'd') {
+    else if(keyCode == RIGHT) {
       posX = posX + 1;
     }
     
-    else if(key == 'a') {
+    else if(keyCode == LEFT) {
       posX = posX - 1;
     }
 }
